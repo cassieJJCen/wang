@@ -1,0 +1,213 @@
+1.生成器優點:節省內存
+	缺点:数据只能从头到尾操作一次
+	     解决方案:
+		从惰性操作变成立即操作,这样就可以通过索引/切片/多次获取数据
+		g01=IterableTools.select(......) [一个生成器]
+		t01=tuple(g01)
+
+
+2.内置高阶函数
+	函数式编程:Linq技术 把一个函数作为一个参数传递进去
+		  语言集成查询 Language Integrated Query
+		  --->相当于是一个框架 
+		      我们写的就是一个集成操作框架
+
+	放在类中,传递核心逻辑
+	1.过滤:filter(func_condition,iterables)
+		具体需求:找出体重大于50的老婆	     
+		这个返回的是一个生成器
+		(1)可以这么写
+			new_list = filter(lambda item: item.age >= 4, wife_list)
+			for item in new_list:
+			    print(item)
+		(2)也可以这么写		
+			for item in filter(lambda item: item.age >= 4, wife_list):
+			    print(item)
+
+	2.映射:map(func_condition,iterable)
+		具体需求:找出所有老婆的年龄/攻击/etc
+
+	3.最小/最大
+		当在这两个的提示里面*,表示后面的全部都是要用关键字传参
+	       min()
+	       max()
+	
+	4.sortted
+		没有改变当前列表的值
+		而是返回了一个新的列表
+		支持降序
+
+	5.(1)itertools
+		 1.多个循环 product
+			  itertools.product(iterable,repeat=需要循环的层数)
+				笛卡尔积:全排列
+				for item in itertools.product(list_dice, list_image):
+		   			print(item)
+		 2.排列	permutations
+			(1)"""需求:四个里面1取三个"""
+			for item in itertools.permutations(tuple_person,3):
+			    print(item)
+
+			(2)"""需求:012345中找出5位的偶数"""
+			tuple_number = (0, 1, 2, 3, 4, 5)
+			total = 0
+			for item in itertools.permutations(tuple_number, 5):
+			    if item[0] != 0 and item[4] % 2 == 0:
+				total += 1
+				print(item)
+			print(total)
+			
+			(3)"""需求:012345中找出5位的偶数,结合其他内置函数进行改写:"""
+			tuple_number = ('0', '1', '2', '3', '4', '5')
+			total = 0
+			for item in filter(lambda item: int(item[-1]) % 2 == 0 and item[0] != '0', itertools.permutations(tuple_number, 5)):
+			    print(int("".join(item)))
+		  
+
+		 3.组合 combinations
+			(1)"""
+				有三种药品,一共要取出100粒
+				要求:每种药都必须要有
+				数学想法:
+					隔板的想法
+					123|4.....99|100
+					相当于是99个缝,插3个隔板,有多少种插法
+				编程思想:
+					当数学思想要转化成编程思想的时候,需要用更多的举例子\建立简单的模型的方式来方便思考,更接近问题的本质,方便枚举和优化算法
+			   """
+			
+
+						
+	***6.****
+		生成器的优势就在这个时候展示出来了:
+		他可以两用,但是用上面的方法的时候,还是会溢出,用下面的方法的时候就不会有这个困难
+		import itertools
+
+		list_dice = [1, 2, 3, 4, 5, 6]
+		n=int(input("请输入筛子数量"))
+		#这样写容易溢出
+		list_result=list(itertools.product(list_dice,repeat=n))
+		print(list_result)
+
+		#这样使用就不会卡死,迭代器的优势,没有放在内存里面
+		for item in itertools.product(list_dice,repeat=n):
+		    total+=1
+		    print(item)
+
+
+
+3.Enclosing函数嵌套
+  	作用域的原因,没办法在fun02当中修改a的值,所以一定要用nonlocal
+	def func01():
+	    a = 10
+	    def fun02():
+		nonlocal a
+		a+=1
+	    fun02()
+	    print(a)
+
+	func01()
+
+
+4.闭包
+	(1)要素
+		1.必须有内嵌函数
+		2.内嵌函数必须引用外部函数
+		3.外部函数必须返回内部函数
+			def func01():
+			    a = 10
+			    def fun02():
+				nonlocal a
+				a += 1
+				print(a)
+
+			    return fun02
+
+			re = func01()
+			re()
+
+			调用的是fun01的函数,外部函数的栈帧没有立刻消失,它在等着内部函数对其进行调用
+	(2)应用场景:
+		1.逻辑连续
+		2.具体代码
+			def give_gife_money(money):
+			    def chile_buy(target, price):
+				nonlocal money
+				if money > price:
+				    print(target, price)
+				    money -= price
+				else:
+				    print("不够钱")
+
+			    return chile_buy
+
+
+			action = give_gife_money(1000)
+			action("水枪", 900)
+			action("水枪", 900)
+					
+	
+
+5.装饰器decorators
+	1.作用:不改变原函数的定义,增加新功能
+		可以随意增加和减少
+	2.本质上来说就是在覆盖变量名,让原变量名中的函数的内容增加了
+	3.具体实现代码:
+		def id_confirmation(function):
+		    def wrapper(*args, **kwargs):#形参位置,是为了合
+			print("验证权限:")
+			return function(*args, **kwargs) #在调用原有函数,把原有函数的返回值作为新函数的返回值
+							  因为怕在参数传递当中出现了原函数很多的函数
+							  所以只能把这些个参数全都写进去了
+							#实参位置,是为了拆
+		    return wrapper
+
+
+		@id_confirmation #相当于enter_background=id_confirmation(enter_background)
+		def enter_background():
+		    print("进入后台")
+
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

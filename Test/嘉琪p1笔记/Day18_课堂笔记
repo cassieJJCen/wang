@@ -1,0 +1,273 @@
+1.使用iter开回车
+	先打iter 然后就会跳出来for循环,先写后面的需要迭代的东西,回车就会写item名字.
+	再回车,就会得到下面的东西
+
+2.yield 适用于返回多个数据
+	优势:调用一次next,计算一次,返回一次
+	代码:"""
+		定义函数,获取列表中所有偶数
+	     """
+		list01 = [1223, 2, 47, 24, 4, 34, 6, 43, 67, 6, 2, 334, 31, 23]
+
+		#传统的方法:
+		def tra_get_even():
+		    list02 = []
+		    for item in list01:
+			if item % 2 == 0:
+			    list02.append(item)
+		    return list02
+
+		#新的方法:
+		def gen_get_even():
+		    index = 0
+		    while index < len(list01):
+			if list01[index] % 2 == 0:
+			    yield list01[index]
+			index += 1
+		
+		#本质上调用依次next 计算一次 返回一次
+		for item in gen_get_even():
+		    print(item)
+
+
+3.内置生成器和他们的实现方法
+	(1)enumerate
+		1.简单运用enumerate:
+			list01=[233,243,45783,82,4989,3]
+			for index,item in enumerate(list01):
+			    if item<30:
+				print(index,item)
+			
+			其实只是for在调用__next__
+		2.自己写一个实现enumerate的函数:
+			def my_enumerate(iterable):
+			    index = 0
+			    for item in iterable:
+				yield (index, item)
+				index += 1
+
+
+			list01 = [234, 4, 3, 23, 4, 5, 34, 23, 4, 3, 3234]
+			for item in my_enumerate(list01):
+			    print(item)
+					
+			
+	(2)zip压缩
+		1.简单运用zip:
+			实际上zip可以接受多个
+			list01=[233,243,45783,82,4989,3]
+			list02=["a","b","c","d","e"]
+			for item in zip(list01,list02):
+			    print(item)
+				===>只会短的那个和别的组合输出:(233, 'a')
+							(243, 'b')
+							(45783, 'c')
+							(82, 'd')
+							(4989, 'e')	
+		2.自己写一个两个的zip:		
+			def my_zip(list01, list02):
+			    if len(list01) > len(list02):
+				length = len(list02)
+			    else:
+				length = len(list01)
+
+			    for i in range(length):
+				yield (list01[i], list02[i])
+
+		3.写一个多个的zip
+			def my_zip3(*args):
+			    shortest_list = len(args[0])
+			    for i in args:
+				if shortest_list > len(i):
+				    shortest_list = len(i)
+
+				#主要是yield返回的时候,直接(value1,value2,value3)返回的全都是地址值
+				 需要将他们返回的先弄成一个列表,再将它变成元祖,这样才可以一下子拿到全部
+			    for i in range(shortest_list):
+				list_yield=[]
+				for j in args:
+				    list_yield.append(j[i])
+				yield tuple(list_yield)
+
+4.生成器表达式
+	(1)语法	:	
+		#当列表推倒式的[]的变成了(),就是变成了生成器
+		result02 = (item for item in list01 if item % 2 == 0)
+		for item in result02:
+		    print(item)
+		
+		print(type(result02)) 会是<class 'generator'>
+
+	(2)生成器源代码:
+		class Generator:
+		    def __iter__(self): #可迭代对象
+			return self
+
+		    def __next__(self): #有next就是迭代器
+			return 数据
+	(3)具体例子
+		"""
+		练习:
+		生成器函数 生成器表达式
+		1.在技能类表中,查找所有技能名称和攻击力
+		2.查找名称大于4个字的技能
+		3.查找攻击力大于150的技能名称
+		"""
+			class Skill:
+			    def __init__(self, name="", atk=0, cost_sp=0, duration=0):
+				self.name = name
+				self.atk = atk
+				self.cost_sp = cost_sp
+				self.duration = duration
+			    def __str__(self):
+				return self.name
+		
+
+			list01 = [Skill("乾坤大挪移", 160, 30, 5),
+			    	Skill("独孤九剑", 120, 20, 4),
+			   	 Skill("降龙十八掌", 200, 43, 8)]
+
+			#用函数,当别人要用的时候,写成这个样子
+			def search_name_atk():
+			    for item in list01:
+				yield item.name, item.atk
+
+			for item in search_name_atk():
+			    print(item)
+			
+			#用的是表达式,当只是子集在做,自己再用的时候
+			  此时返回的的是地址值,因为返回的item中,class没有__str__
+			result1 = (item for item in list01 if len(item.name) > 4)
+			for item in result1():
+			    print(item)
+
+
+			#用的还是表达式,缩写了
+			for i in (item.name for item in list01 if item.atk > 150):
+			    print(i)
+
+
+6.yield和return的差别:
+	如果是只要找一个就是return 如果是yield就是多个
+
+
+7.函数式编程
+	函数可以赋值给变量,赋值后变量绑定函数
+	作用:函数不会被调死,可以传个参数,就灵活拼接函数应该要做什么
+	思想:还是可以用封装/继承/多态的思想,将函数作为参数进行传递
+	代码:
+		"""
+		1.定义函数,找出字符串
+		2.找出大于10的整数
+		3.找出长度大于2的字符串
+		"""
+		list01 = [2, "2", "31", 34, "lys","343423", True, 5.276, 4, 2, '234', 2.3211, 9]
+
+
+		def find_all_string(item):
+		    if type(item) == str:
+			return True
+		    return False
+
+
+		def find_all_sting_2(item):
+		    if find_all_string(item):
+			if len(item) > 2:
+			    return True
+		    return False
+
+
+		def find_all_int_10(item):
+		    if isinstance(item,(int,float)) and item >10:
+			return True
+		    return False
+
+
+		def find01(condition):	#万能查找函数find 根据不同的condition进行定义 可以得出不同的效果
+		    for item in list01:
+			if condition(item):
+			    yield item
+
+
+		for i in find01(find_all_string):
+		    print(i)
+
+		for i in find01(find_all_int_10):
+		    print(i)
+
+		for i in find01(find_all_sting_2):
+		    print(i)
+					
+
+8.静态方法
+	语法:@staticmethod
+	     用类名点就可以了,没有自动传参,不会自动传参
+	     静态方法不能访问实例和类
+	使用场景:什么数据都不用操作,就可以用静态方法
+		 可以定义常用的函数
+	基于此,对上面的代码进行优化:
+		"""
+		1.定义函数,找出字符串
+		2.找出大于10的整数
+		3.找出长度大于2的字符串
+		"""
+		1.iterable_tools.py
+			class IterableHelper:
+			    @staticmethod
+			    #静态方法什么都不会传递进来
+			    def find01(iterable, func_condition):
+				"""
+				    通用的查找多个元素方法
+				:param iterable: 需要搜索的可迭代对象
+				:param func_condition: 搜索的逻辑/条件
+				:return:生成器对象
+				"""
+				for item in iterable:
+				    if func_condition(item):
+					yield item
+		2.exercise05.py
+		from common.iterable_tools import IterableHelper
+		for item in IterableHelper.find01(list01,find_all_int_10):
+   			 print(item)
+
+9.匿名方法
+	语法:lambda 参数:返回值
+	     lambda不支持赋值语句
+	例子:	      
+		a=lambda a,b:a+b
+		c= lambda a,b:print(a**b)
+			c(2,3)
+	具体项目代码中应用:
+		将这个三个函数缩写:
+		 def function01(item):
+			return item.cost_sp==0	
+		 def function02(item):
+			return (item.name,item.cost_hp,item.atk)
+		成这个样子,不需要有名字:
+		IterableHelper.single(list01,lambda item:item.cost_sp==0)
+		IterableHelper.select(list01,lambda item:(item.name,item.cost_hp,item.atk))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
